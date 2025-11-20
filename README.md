@@ -16,8 +16,6 @@ Cette documentation décrit toute la configuration : réseau, sécurité, serveu
 
 ## Sommaire
 
-## Sommaire
-
 - [Résumé du projet](#résumé-du-projet)  
 - [Installation (Guide rapide)](#installation-guide-rapide)  
   - [1. Installer pfSense](#1-installer-pfsense)  
@@ -547,5 +545,6 @@ sudo ufw enable
 #### Fail2Ban
 
 Protège SSH + Apache automatiquement.
+
 
 

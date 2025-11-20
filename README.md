@@ -1,6 +1,6 @@
-# 📘 Projet Infrastructure Portfolio
+# Projet Infrastructure Portfolio
 
-## 📝 Résumé du projet
+## Résumé du projet
 
 Ce projet consiste à mettre en place une infrastructure réseau complète comprenant :
 
@@ -514,3 +514,4 @@ sudo ufw enable
 #### Fail2Ban
 
 Protège SSH + Apache automatiquement.
+

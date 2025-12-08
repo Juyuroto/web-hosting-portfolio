@@ -1,60 +1,13 @@
-version: "3.8"
-
 services:
-  web:
-    build:
-      context: .
-      dockerfile: dockerfile
-    container_name: web
-    restart: unless-stopped
-    ports:
-      - "3000:80"          # Access your site at http://localhost:3000
-    volumes:
-      - ./www:/var/www/html
-    depends_on:
-      - db
-    networks:
-      - app-network
-
   db:
-    image: mysql:8.0
-    container_name: db
-    restart: unless-stopped
-    ports:
-      - "3306:3306"          # MySQL accessible sur localhost:3306
     environment:
-      MYSQL_ROOT_PASSWORD: example_root_password
-      MYSQL_DATABASE: mydb
-      MYSQL_USER: myuser
-      MYSQL_PASSWORD: mypassword
-    volumes:
-    - db_data:/var/lib/mysql
-    - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - app-network
-
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+  web:
+    ports:
+      - "${PORT_WEB}:80"
   phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: phpmyadmin
-    restart: unless-stopped
     ports:
-      - "81:80"          # Access phpMyAdmin at http://localhost:81
-    environment:
-      PMA_HOST: db
-      PMA_USER: root
-      PMA_PASSWORD: example_root_password
-    depends_on:
-      - db
-    networks:
-      - app-network
-
-volumes:
-  db_data:
-
-networks:
-  app-network:
+      - "${PORT_PMA}:80"

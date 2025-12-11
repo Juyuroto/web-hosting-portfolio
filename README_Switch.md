@@ -1,6 +1,6 @@
 # README – Configuration Complète du Switch Cisco (Architecture pfSense + VLAN)
 
-# Shéma réseau - VLAN & Architecture
+## Shéma réseau - VLAN & Architecture
 
 ```markdoown
                  INTERNET
@@ -242,4 +242,5 @@ show ip interface brief
 
 ```bash
 show interfaces status
+
 ```

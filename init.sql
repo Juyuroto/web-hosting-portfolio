@@ -1,13 +1,12 @@
 CREATE DATABASE IF NOT EXISTS mydb;
-
 USE mydb;
 
 CREATE TABLE IF NOT EXISTS contacts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
-    number VARCHAR(20),
+    tel VARCHAR(20),
     subject VARCHAR(255),
     message TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -1,13 +1,53 @@
 services:
   db:
+    image: mysql:8.0
+    container_name: portfolio_db
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - portfolio_network
+
   web:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: portfolio_web
+    restart: unless-stopped
     ports:
       - "${PORT_WEB}:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/apache/vhost.conf:/etc/apache2/sites-available/000-default.conf
+    depends_on:
+      - db
+    networks:
+      - portfolio_network
+
   phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: portfolio_pma
+    restart: unless-stopped
     ports:
       - "${PORT_PMA}:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: ${MYSQL_USER}
+      PMA_PASSWORD: ${MYSQL_PASSWORD}
+    depends_on:
+      - db
+    networks:
+      - portfolio_network
+
+volumes:
+  db_data:
+
+networks:
+  portfolio_network:
+    driver: bridge

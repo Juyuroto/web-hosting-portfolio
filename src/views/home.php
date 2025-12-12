@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="style/style.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
     <title>Portfolio</title>
 </head>
 <body>
@@ -36,7 +36,7 @@
 
     <!-- Section 1 : About -->
     <section id="presentation" class="section-long">
-            <button class="magic-button"><a href="me.php">About Me</a></button>
+            <button class="magic-button"><a href="me">About Me</a></button>
     </section>
 
     <!-- Section 2 : Project -->
@@ -224,7 +224,6 @@
                     </div>
                 </article>
 
-                <!-- Card 6 -->
             </div>
 
             <div class="carousel-controls">
@@ -501,18 +500,18 @@
     <section id="contact" class="contact section-long">
         <div class="container">
             <a href="mailto:alain.corazzini@epitech.eu" class="icon icon-mail">
-            <img src="image/icon/mail.svg" alt="Mail" class="icon-img">
+            <img src="assets/images/icons/mail.svg" alt="Mail" class="icon-img">
             </a>
             <a href="tel:0698329497" class="icon icon-dis">
-            <img src="image/icon/phone.svg" alt="Discord" class="icon-img">
+            <img src="assets/images/icons/phone.svg" alt="Discord" class="icon-img">
             </a>
 
             <a href="https://github.com/Juyuroto" class="icon icon-github">
-            <img src="image/icon/github.svg" alt="GitHub" class="icon-img">
+            <img src="assets/images/icons/github.svg" alt="GitHub" class="icon-img">
             </a>
 
             <a href="https://www.linkedin.com/in/alain-corazzini-b81a90359/" class="icon icon-in">
-            <img src="image/icon/linkedin.svg" alt="LinkedIn" class="icon-img">
+            <img src="assets/images/icons/linkedin.svg" alt="LinkedIn" class="icon-img">
             </a>
         </div>
     </section>
@@ -520,10 +519,10 @@
 </main>
 
 <footer>
-    <p>© 2025 CORAZZINI <a href="/CRUD/index.php">Alain</a>. Tous droits réservés.</p>
+    <p>© 2025 CORAZZINI Alain. Tous droits réservés.</p>
 </footer>
 
-<script src="script.js"></script>
-<script src="serveur.js"></script>
+<script src="assets/js/script.js"></script>
+<script src="assets/js/serveur.js"></script>
 </body>
 </html>

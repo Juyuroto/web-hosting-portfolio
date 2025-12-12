@@ -82,6 +82,8 @@ button:hover:before {
     width: 3rem;
 }
 
+
+
 /*------------------------------------------------------------------------------------*/
 
 #main-container {
@@ -138,6 +140,10 @@ h1 {
     margin: 20px 40px;
     width: 40vh;
     height: auto;
+    border: 4px solid #cddc39;
+    border-radius: 30%;
+    border-top-color: #ff5722;
+    border-left-color: #ff5722;
 }
 
 /*------------------------------------------------------------------------------------*/

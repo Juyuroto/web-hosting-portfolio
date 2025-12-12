@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-    <link rel="stylesheet" href="../../public/assets/css/me.css">
+    <link rel="stylesheet" href="assets/css/me.css">
 </head>
 <body class="container">
 <div class="preloader"></div>
@@ -21,7 +21,7 @@
                 <span class="z z-3">Z</span>
                 <span class="z z-4">Z</span>
             </h1>
-            <img class="img-profile" src="" alt="">
+            <img class="img-profile" src="assets/images/profil.png" alt="">
         </section>
 
         <!-- Section 2 -->

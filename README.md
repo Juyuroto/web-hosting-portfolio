@@ -132,7 +132,7 @@ Code source de l'application.
 
 ```bash
 # Cloner le projet
-git clone [<url>](https://github.com/Juyuroto/web-hosting-portfolio.git)
+git clone https://github.com/Juyuroto/web-hosting-portfolio.git
 cd web-hosting-portfolio
 
 # Configurer l'environnement
@@ -167,4 +167,5 @@ docker-compose exec php bash
 - Apache
 - MySQL
 - Docker
+
 - Composer

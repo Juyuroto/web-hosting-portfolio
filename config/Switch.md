@@ -1,284 +1,440 @@
-# README – Configuration Complète du Switch Cisco (Architecture pfSense + VLAN)
+# Configuration Switch - Infrastructure Portfolio
 
-## Shéma réseau - VLAN & Architecture
+## Avertissement
 
-```markdoown
-                 INTERNET
-                     │
-                     ▼
-              ┌────────────┐
-              │  pfSense   │
-              ├────────────┤
-              │ WAN        │
-              │ LAN (VLAN10)───┐
-              │ ADMIN (VLAN15) │
-              │ DMZ (VLAN20)   │
-              │ MGMT (VLAN30)  │
-              └──────┬─────────┘
-                     │
-                     ▼
-              ┌──────────────┐   (Trunk : VLAN 10/15/20/30)
-              │ Switch Cisco │════════════════════════════╗
-              └──────────────┘                            ║
-                 │       │       │       │                ║
-                 │       │       │       │                ║
-                 ▼       ▼       ▼       ▼                ║
-        PC Admin     Serveur1   Serveur2   Port MGMT      ║
-      (VLAN 15)     (VLAN 20)  (VLAN 20)   (VLAN 30)      ║
-       10.0.15.x    10.0.10.x  10.0.10.x   10.0.30.2      ║
-                                                          ║
-                           Réseau LAN (VLAN 10)─────────══╝
-                          10.0.0.x (PC domestiques)
-```
+⚠️ **Ce fichier est OPTIONNEL** dans votre architecture actuelle.
 
----
+Avec **3 interfaces physiques sur OPNsense** (WAN, LAN_ADMIN, LAN_SERVERS), vous n'avez **pas besoin** d'un switch manageable avec VLANs.
 
-## 1. Objectif
-
-Ce document fournit la configuration complète d’un switch **Cisco IOS** intégré dans une architecture avec :
-
-- pfSense (LAN / DMZ / ADMIN / MGMT)
-- Serveur Portfolio
-- Serveur Backup
-- PC Admin isolé (pas d’accès Internet)
-- VLANs segmentés et sécurisés
-
-Aucune autre information n’est requise pour appliquer la configuration.
+**Ce document est fourni uniquement si** :
+- Vous souhaitez connecter plusieurs machines dans LAN_ADMIN
+- Vous souhaitez connecter plusieurs serveurs dans LAN_SERVERS
+- Vous avez un switch manageable disponible et souhaitez l'utiliser
 
 ---
 
 ## Sommaire
 
-- [README – Configuration Complète du Switch Cisco (Architecture pfSense + VLAN)](#readme--configuration-complète-du-switch-cisco-architecture-pfsense--vlan)
-  - [Shéma réseau - VLAN \& Architecture](#shéma-réseau---vlan--architecture)
-  - [1. Objectif](#1-objectif)
-  - [Sommaire](#sommaire)
-  - [Pages](#pages)
-  - [2. VLAN à créer](#2-vlan-à-créer)
-  - [3. Plan d’adressage recommandé](#3-plan-dadressage-recommandé)
-  - [4. Rôle des ports du switch](#4-rôle-des-ports-du-switch)
-  - [5. Création des VLANs](#5-création-des-vlans)
-  - [6. Configuration du port TRUNK (vers pfSense)](#6-configuration-du-port-trunk-vers-pfsense)
-  - [7. Configuration des ports ACCESS](#7-configuration-des-ports-access)
-    - [Port Fa0/2 – PC Admin (VLAN 15)](#port-fa02--pc-admin-vlan-15)
-    - [Port Fa0/3 – Serveur Portfolio (DMZ – VLAN 20)](#port-fa03--serveur-portfolio-dmz--vlan-20)
-    - [Port Fa0/4 – Serveur Backup (DMZ – VLAN 20)](#port-fa04--serveur-backup-dmz--vlan-20)
-    - [Port Fa0/5 – Management Switch (VLAN 30)](#port-fa05--management-switch-vlan-30)
-  - [8. Configuration du management (VLAN 30)](#8-configuration-du-management-vlan-30)
-  - [9. Sécurisation du switch](#9-sécurisation-du-switch)
-    - [Désactivation des ports inutilisés](#désactivation-des-ports-inutilisés)
-    - [Activer PortFast globalement](#activer-portfast-globalement)
-    - [Port Security – PC Admin (optionnel)](#port-security--pc-admin-optionnel)
-    - [Sécurisation de l’accès management (recommandé)](#sécurisation-de-laccès-management-recommandé)
-  - [10. Commandes de vérification](#10-commandes-de-vérification)
-    - [Vérifier VLANs](#vérifier-vlans)
-    - [Vérifier le trunk](#vérifier-le-trunk)
-    - [Vérifier les IP du switch](#vérifier-les-ip-du-switch)
-    - [Vérifier les ports actifs](#vérifier-les-ports-actifs)
-
-## Pages
-
-- [0. Site](../README.md)
-- [1. Configuration général](Infra.md)
-- [2. Configuration routeur OPNsense](OPNsense.md)
-- [3. Configuration PC Admin](PC_Admin.md)
+- [Cas d'usage](#cas-dusage)
+- [Architecture sans switch](#architecture-sans-switch)
+- [Architecture avec switch](#architecture-avec-switch)
+- [Configuration switch manageable](#configuration-switch-manageable)
+- [Configuration switch non-manageable](#configuration-switch-non-manageable)
 
 ---
 
-## 2. VLAN à créer
+## Cas d'usage
 
-VLAN 10 : LAN
-VLAN 20 : DMZ
-VLAN 15 : ADMIN (PC Admin isolé)
-VLAN 30 : MGMT (management du switch)
+### Vous N'AVEZ PAS besoin d'un switch si :
 
----
+✅ 1 PC Admin uniquement dans LAN_ADMIN  
+✅ 1 serveur Proxmox uniquement dans LAN_SERVERS  
+✅ OPNsense dispose de 3 ports physiques séparés
 
-## 3. Plan d’adressage recommandé
+**Architecture simple (recommandée)** :
 
-LAN       : 10.0.0.0/24
-DMZ       : 10.0.10.0/24
-ADMIN     : 10.0.15.0/24
-MGMT      : 10.0.30.0/24
-
-Switch (VLAN 30)   : 10.0.30.2
-Gateway MGMT (pfSense) : 10.0.30.1
-
----
-
-## 4. Rôle des ports du switch
-
-```yaml
-Fa0/1  : TRUNK vers pfSense (tous les VLANs)
-Fa0/2  : ACCESS VLAN 15 (PC Admin – isolé d’Internet)
-Fa0/3  : ACCESS VLAN 20 (Serveur Portfolio)
-Fa0/4  : ACCESS VLAN 20 (Serveur Backup)
-Fa0/5  : ACCESS VLAN 30 (Management switch)
-Fa0/6–24 : Ports désactivés
+```
+[Box FAI] ──── em0 (WAN)
+                  │
+            [OPNsense]
+                  │
+    ┌─────────────┼─────────────┐
+    │             │             │
+  em1           em2           em3
+(ADMIN)      (SERVERS)      (libre)
+    │             │
+[PC Admin]   [Proxmox]
 ```
 
+### Vous AVEZ besoin d'un switch si :
+
+🔹 Plusieurs PC dans LAN_ADMIN (PC Admin + PC Backup par exemple)  
+🔹 Plusieurs serveurs physiques dans LAN_SERVERS  
+🔹 OPNsense n'a que 2 ports disponibles (WAN + 1 LAN)
+
 ---
 
-## 5. Création des VLANs
+## Architecture sans switch
+
+### Topologie directe (actuelle)
+
+```
+                    INTERNET
+                        │
+                        ▼
+                   [Box FAI]
+                        │
+                        ▼
+              ┌─────────────────┐
+              │    OPNsense     │
+              ├─────────────────┤
+              │ em0: WAN        │
+              │ em1: LAN_ADMIN  │ ──→ [PC Admin]
+              │ em2: LAN_SERVERS│ ──→ [Proxmox]
+              └─────────────────┘
+```
+
+**Avantages** :
+- ✅ Simple à configurer
+- ✅ Pas de matériel supplémentaire
+- ✅ Isolation physique maximale
+- ✅ Aucun risque de misconfiguration VLAN
+
+**Inconvénients** :
+- ❌ 1 seul appareil par réseau
+- ❌ Pas d'évolutivité
+
+---
+
+## Architecture avec switch
+
+### Cas 1 : Switch NON-manageable (simple)
+
+```
+                    INTERNET
+                        │
+                        ▼
+                   [Box FAI]
+                        │
+                        ▼
+              ┌─────────────────┐
+              │    OPNsense     │
+              ├─────────────────┤
+              │ em0: WAN        │
+              │ em1: LAN_ADMIN  │──┐
+              │ em2: LAN_SERVERS│──┼──┐
+              └─────────────────┘  │  │
+                                   ▼  ▼
+                           [Switch 1] [Switch 2]
+                           (ADMIN)    (SERVERS)
+                              │          │
+                    ┌─────────┼────┐    ├──────┐
+                    ▼         ▼    ▼    ▼      ▼
+                [PC Admin] [PC2] [PC3] [Prox1][Prox2]
+```
+
+**Utilisation** :
+- Switch simple 8 ports sur em1 → Tous en LAN_ADMIN
+- Switch simple 8 ports sur em2 → Tous en LAN_SERVERS
+- Pas de configuration nécessaire sur le switch
+
+### Cas 2 : Switch manageable avec VLANs
+
+```
+                    INTERNET
+                        │
+                        ▼
+                   [Box FAI]
+                        │
+                        ▼
+              ┌─────────────────┐
+              │    OPNsense     │
+              ├─────────────────┤
+              │ em0: WAN        │
+              │ em1: TRUNK      │──→ [Switch manageable]
+              │   (VLAN 10+20)  │       │
+              └─────────────────┘       │
+                                    VLAN 10 VLAN 20
+                                       │      │
+                                    [Admin] [Servers]
+```
+
+**Utilisation** :
+- OPNsense em1 en mode TRUNK (plusieurs VLANs sur 1 câble)
+- Switch manageable avec VLANs 10 (ADMIN) et 20 (SERVERS)
+- Plus complexe mais plus flexible
+
+---
+
+## Configuration switch manageable
+
+⚠️ **Seulement si vous avez un switch manageable Cisco, HP, Netgear, etc.**
+
+### Prérequis
+
+```yaml
+Switch: Manageable (Cisco, HP, Netgear)
+OPNsense: 1 port libre (em1) configuré en TRUNK
+VLANs: 10 (ADMIN), 20 (SERVERS)
+```
+
+### Étape 1 : Créer les VLANs dans OPNsense
+
+**Interfaces → Other Types → VLAN**
+
+#### VLAN 10 - ADMIN
+
+```yaml
+Parent interface: em1
+VLAN tag: 10
+VLAN priority: 0
+Description: VLAN_ADMIN
+```
+
+**Save**
+
+#### VLAN 20 - SERVERS
+
+```yaml
+Parent interface: em1
+VLAN tag: 20
+VLAN priority: 0
+Description: VLAN_SERVERS
+```
+
+**Save**
+
+### Étape 2 : Assigner les VLANs aux interfaces
+
+**Interfaces → Assignments**
+
+Cliquer sur **+** pour ajouter :
+- VLAN 10 (em1) → Renommer en **LAN_ADMIN**
+- VLAN 20 (em1) → Renommer en **LAN_SERVERS**
+
+**Configurer chaque interface** :
+
+**LAN_ADMIN (VLAN 10)** :
+```yaml
+Enable: ✓
+IPv4 Configuration: Static
+IPv4 address: 192.168.10.1/24
+Description: LAN Admin - VLAN 10
+```
+
+**LAN_SERVERS (VLAN 20)** :
+```yaml
+Enable: ✓
+IPv4 Configuration: Static
+IPv4 address: 192.168.11.1/24
+Description: LAN Servers - VLAN 20
+```
+
+### Étape 3 : Configurer le switch
+
+#### Exemple : Switch Cisco
+
+**Connexion au switch** :
 
 ```bash
+# Via console série ou Telnet/SSH
+telnet 192.168.10.2
+```
+
+**Configuration** :
+
+```cisco
 enable
 configure terminal
 
+! Créer les VLANs
 vlan 10
- name LAN
-exit
-
-vlan 20
- name DMZ
-exit
-
-vlan 15
  name ADMIN
 exit
 
-vlan 30
- name MGMT
+vlan 20
+ name SERVERS
 exit
-```
 
----
-
-## 6. Configuration du port TRUNK (vers pfSense)
-
-```bash
-interface fa0/1
+! Port TRUNK vers OPNsense (exemple: port 1)
+interface GigabitEthernet0/1
+ description TRUNK to OPNsense
  switchport mode trunk
- switchport trunk allowed vlan 10,15,20,30
+ switchport trunk allowed vlan 10,20
  spanning-tree portfast trunk
 exit
-```
 
----
-
-## 7. Configuration des ports ACCESS
-
-### Port Fa0/2 – PC Admin (VLAN 15)
-
-```bash
-interface fa0/2
+! Ports ACCESS VLAN 10 (PC Admin)
+interface range GigabitEthernet0/2-10
+ description LAN_ADMIN
  switchport mode access
- switchport access vlan 15
+ switchport access vlan 10
  spanning-tree portfast
 exit
-```
 
-### Port Fa0/3 – Serveur Portfolio (DMZ – VLAN 20)
-
-```bash
-interface fa0/3
+! Ports ACCESS VLAN 20 (Serveurs)
+interface range GigabitEthernet0/11-20
+ description LAN_SERVERS
  switchport mode access
  switchport access vlan 20
  spanning-tree portfast
 exit
-```
 
-### Port Fa0/4 – Serveur Backup (DMZ – VLAN 20)
-
-```bash
-interface fa0/4
- switchport mode access
- switchport access vlan 20
- spanning-tree portfast
+! Désactiver ports inutilisés
+interface range GigabitEthernet0/21-24
+ shutdown
 exit
-```
 
-### Port Fa0/5 – Management Switch (VLAN 30)
-
-```bash
-interface fa0/5
- switchport mode access
- switchport access vlan 30
- spanning-tree portfast
-exit
-```
-
----
-
-## 8. Configuration du management (VLAN 30)
-
-```bash
-interface vlan 30
- ip address 10.0.30.2 255.255.255.0
+! Configuration management (VLAN 10)
+interface vlan 10
+ ip address 192.168.10.2 255.255.255.0
  no shutdown
 exit
 
-ip default-gateway 10.0.30.1
+ip default-gateway 192.168.10.1
+
+! Sauvegarder
+end
+write memory
 ```
 
----
+#### Exemple : Switch HP/Aruba
 
-## 9. Sécurisation du switch
-
-### Désactivation des ports inutilisés
-
-```bash
-interface range fa0/6 - 24
- shutdown
-exit
+```
+# Via WebGUI
+- VLANs → Add VLAN 10 "ADMIN"
+- VLANs → Add VLAN 20 "SERVERS"
+- Ports → Port 1 → Mode: Trunk, Allowed VLANs: 10,20
+- Ports → Ports 2-10 → Mode: Access, VLAN: 10
+- Ports → Ports 11-20 → Mode: Access, VLAN: 20
+- Network → Management → IP: 192.168.10.2/24, Gateway: 192.168.10.1
 ```
 
-### Activer PortFast globalement
+### Étape 4 : Vérifier la configuration
 
-```bash
-spanning-tree portfast default
-```
+**Depuis le switch** :
 
-### Port Security – PC Admin (optionnel)
-
-```bash
-interface fa0/2
- switchport port-security
- switchport port-security maximum 1
- switchport port-security violation restrict
- switchport port-security mac-address sticky
-exit
-```
-
-### Sécurisation de l’accès management (recommandé)
-
-```bash
-line vty 0 4
- transport input ssh
- login local
-exit
-
-ip domain-name local
-crypto key generate rsa
-
-username admin privilege 15 secret MOTDEPASSE
-```
-
----
-
-## 10. Commandes de vérification
-
-### Vérifier VLANs
-
-```bash
+```cisco
 show vlan brief
+show interfaces trunk
+show running-config
 ```
 
-### Vérifier le trunk
+**Depuis OPNsense** :
+
+**Interfaces → Overview** → Vérifier que les VLANs sont UP
+
+**Depuis PC Admin** :
 
 ```bash
-show interfaces fa0/1 switchport
+# Doit être dans VLAN 10
+ping 192.168.10.1  # OPNsense
+ping 192.168.10.2  # Switch
+
+# Ne doit PAS pouvoir atteindre VLAN 20 directement
+ping 192.168.11.10  # Doit passer par OPNsense (firewall)
 ```
 
-### Vérifier les IP du switch
+---
 
-```bash
-show ip interface brief
+## Configuration switch non-manageable
+
+### Switch simple (plug & play)
+
+**Si vous utilisez un switch NON-manageable** :
+
+1. **Brancher le switch sur OPNsense em1 (LAN_ADMIN)**
+2. Brancher les PC Admin sur le switch
+3. Tous les PC seront dans **192.168.10.0/24**
+4. Configuration automatique, rien à faire
+
+**Ou** :
+
+1. **Brancher le switch sur OPNsense em2 (LAN_SERVERS)**
+2. Brancher les serveurs Proxmox sur le switch
+3. Tous les serveurs seront dans **192.168.11.0/24**
+4. Configuration automatique
+
+**⚠️ Attention** : Avec un switch non-manageable, vous ne pouvez pas mélanger les VLANs sur un même switch.
+
+---
+
+## Schéma récapitulatif
+
+### Architecture actuelle (SANS switch, recommandée)
+
+```
+              [OPNsense]
+                  │
+    ┌─────────────┼─────────────┐
+    │             │             │
+  em0           em1           em2
+ (WAN)        (ADMIN)      (SERVERS)
+    │             │             │
+[Internet]   [PC Admin]    [Proxmox]
 ```
 
-### Vérifier les ports actifs
+**✅ Configuration terminée**
 
-```bash
-show interfaces status
+### Architecture avec switch simple
 
 ```
+              [OPNsense]
+                  │
+    ┌─────────────┼─────────────┐
+    │             │             │
+  em0           em1           em2
+ (WAN)        (ADMIN)      (SERVERS)
+    │             │             │
+[Internet]   [Switch]       [Switch]
+              │   │           │   │
+           [PC1][PC2]     [Srv1][Srv2]
+```
+
+**Aucune configuration switch nécessaire**
+
+### Architecture avec switch manageable + VLANs
+
+```
+              [OPNsense]
+                  │
+         em0      │em1 (TRUNK)    em2
+        (WAN) ────┴──────┐       (libre)
+           │             │
+      [Internet]    [Switch manageable]
+                    VLAN 10 │ VLAN 20
+                       │    │    │
+                    [PC1] [PC2] [Srv1]
+```
+
+**Configuration VLANs requise**
+
+---
+
+## Checklist switch
+
+### Sans switch (architecture actuelle)
+
+- [ ] OPNsense em0 → Box FAI (WAN)
+- [ ] OPNsense em1 → PC Admin direct (LAN_ADMIN)
+- [ ] OPNsense em2 → Proxmox direct (LAN_SERVERS)
+- [ ] Tests de connectivité réussis
+- [ ] ✅ **Aucune autre action nécessaire**
+
+### Avec switch NON-manageable
+
+- [ ] Switch acheté (8-16 ports suffisant)
+- [ ] Switch branché sur OPNsense em1 ou em2
+- [ ] Appareils branchés sur le switch
+- [ ] IPs fixes configurées sur chaque appareil
+- [ ] Tests de connectivité réussis
+
+### Avec switch manageable + VLANs
+
+- [ ] Switch manageable disponible
+- [ ] VLANs créés dans OPNsense (10, 20)
+- [ ] VLANs assignés aux interfaces OPNsense
+- [ ] Port TRUNK configuré sur le switch
+- [ ] Ports ACCESS configurés (VLAN 10 / 20)
+- [ ] Management IP configurée sur le switch
+- [ ] Tests de connectivité réussis
+- [ ] Isolation VLAN vérifiée
+
+---
+
+## Recommandation finale
+
+**Pour votre infrastructure actuelle** :
+
+🎯 **N'utilisez PAS de switch** tant que vous avez :
+- 1 seul PC Admin
+- 1 seul serveur Proxmox
+- OPNsense avec 3 ports disponibles
+
+**C'est la solution la plus simple, sûre et efficace.**
+
+---
+
+**Version** : 1.1  
+**Dernière mise à jour** : 2025-24-12  
+**Auteur** : Alain Corazzini

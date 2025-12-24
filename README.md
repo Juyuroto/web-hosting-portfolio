@@ -10,6 +10,7 @@ Application web Portfolio développée en PHP avec une architecture MVC (Model-V
   - [Résumé du Projet](#résumé-du-projet)
   - [Sommaire](#sommaire)
   - [Page](#page)
+  - [Structure de la documentation](#structure-de-la-documentation)
   - [Structure du Projet](#structure-du-projet)
   - [Description des Dossiers](#description-des-dossiers)
     - [`/docker`](#docker)
@@ -24,13 +25,41 @@ Application web Portfolio développée en PHP avec une architecture MVC (Model-V
   - [Installation](#installation)
   - [Commandes Utiles](#commandes-utiles)
   - [Technologies](#technologies)
+  - [Changelog](#changelog)
 
 ## Page
 
-- [1. Configuration général](config/Infra.md)
-- [2. Configuration routeur OPNsense](config/OPNsense.md)
-- [3. Configuration PC Admin](config/PC_Admin.md)
-- [4. Configuration Switch](config/Switch.md)
+- [1. Explcation et précision](config/Explication.md)
+- [2. Différente étapes d'installation et shémas](config/Infra.md)
+- [3. **Optionnel** - Configurer un switch](config/Switch.md)
+- [4. Configuration routeur OPNsense](config/OPNsense.md)
+- [5. Configuration Proxmox et des VMs](config/Proxmox.md)
+- [6. Configuration de docker sous Ubuntu](Web_Container.md)
+- [7. Configuration PC Admin](config/PC_Admin.md)
+
+## Structure de la documentation
+
+```
+docs/
+├── README.md             # Ce fichier (vue d'ensemble)
+├── Explication.md        # Fichier de compréhension (vue d'ensemble Infra)
+├── Infra.md              # Architecture globale et schémas
+├── OPNsense.md           # Configuration pare-feu complète
+├── Proxmox.md            # Configuration Proxmox + conteneurs
+├── PC_Admin.md           # Configuration PC Admin Debian
+└── Web_Container.md      # Déploiement du site web
+```
+
+**Ordre de lecture recommandé** :
+
+1. `README.md` (ce fichier) - Vue d'ensemble
+2. `Explication.md` - Vue d'ensemble de Infra
+3. `Infra.md` - Comprendre l'architecture
+4. `Switch.md` - **Optionnel** - Configurer un switch
+5. `OPNsense.md` - Configurer le pare-feu
+6. `Proxmox.md` - Configurer l'hyperviseur
+7. `Web_Container.md` - Déployer le site
+8. `PC_Admin.md` - Configurer le poste d'administration
 
 ## Structure du Projet
 
@@ -132,7 +161,7 @@ Code source de l'application.
 
 ```bash
 # Cloner le projet
-git clone [<url>](https://github.com/Juyuroto/web-hosting-portfolio.git)
+git clone https://github.com/Juyuroto/web-hosting-portfolio.git
 cd web-hosting-portfolio
 
 # Configurer l'environnement
@@ -167,4 +196,21 @@ docker-compose exec php bash
 - Apache
 - MySQL
 - Docker
+
 - Composer
+
+---
+
+## Changelog
+
+**v1.1 (2025-24-12)** :
+- Architecture initiale avec OPNsense + Proxmox
+- Conteneur LXC web opérationnel
+- Site accessible depuis Internet
+- Documentation complète
+
+---
+
+**Version** : 1.1  
+**Dernière mise à jour** : 2025-24-12
+**Auteur** : Alain Corazzini

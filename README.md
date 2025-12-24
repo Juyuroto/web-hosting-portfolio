@@ -198,6 +198,7 @@ docker-compose exec php bash
 - Docker
 
 - Composer
+<<<<<<< HEAD
 
 ---
 
@@ -214,3 +215,5 @@ docker-compose exec php bash
 **Version** : 1.1  
 **Dernière mise à jour** : 2025-24-12
 **Auteur** : Alain Corazzini
+=======
+>>>>>>> refs/remotes/origin/main
